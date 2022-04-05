@@ -1,4 +1,4 @@
-package main
+package permissions
 
 import (
 	"io/ioutil"
@@ -18,7 +18,6 @@ func TestAddJobLevelPermissions(t *testing.T) {
 
 	for _, f := range files {
 		input, err := ioutil.ReadFile(path.Join(inputDirectory, f.Name()))
-
 		if err != nil {
 			log.Fatal(err)
 		}
@@ -38,7 +37,6 @@ func TestAddJobLevelPermissions(t *testing.T) {
 					}
 				}
 			}
-
 		}
 
 		if fixWorkflowPermsResponse.AlreadyHasPermissions {
@@ -54,7 +52,6 @@ func TestAddJobLevelPermissions(t *testing.T) {
 		}
 
 		expectedOutput, err := ioutil.ReadFile(path.Join(outputDirectory, f.Name()))
-
 		if err != nil {
 			log.Fatal(err)
 		}
@@ -77,10 +74,12 @@ func Test_addPermissions(t *testing.T) {
 		want    string
 		wantErr bool
 	}{
-		{name: "bad yaml",
+		{
+			name: "bad yaml",
 			args: args{
 				inputYaml: "123",
-			}, want: "", wantErr: true},
+			}, want: "", wantErr: true,
+		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
@@ -106,19 +105,16 @@ func TestAddWorkflowLevelPermissions(t *testing.T) {
 
 	for _, f := range files {
 		input, err := ioutil.ReadFile(path.Join(inputDirectory, f.Name()))
-
 		if err != nil {
 			log.Fatal(err)
 		}
 
 		output, err := AddWorkflowLevelPermissions(string(input))
-
 		if err != nil {
 			t.Errorf("Error not expected")
 		}
 
 		expectedOutput, err := ioutil.ReadFile(path.Join(outputDirectory, f.Name()))
-
 		if err != nil {
 			log.Fatal(err)
 		}
@@ -127,5 +123,4 @@ func TestAddWorkflowLevelPermissions(t *testing.T) {
 			t.Errorf("test failed %s did not match expected output\n%s", f.Name(), output)
 		}
 	}
-
 }

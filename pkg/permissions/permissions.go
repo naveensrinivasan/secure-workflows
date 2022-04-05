@@ -1,4 +1,4 @@
-package main
+package permissions
 
 import (
 	"fmt"
@@ -25,15 +25,17 @@ type JobError struct {
 	Errors  []string
 }
 
-const errorSecretInRunStep = "KnownIssue-1: Jobs with run steps that use token are not supported"
-const errorSecretInRunStepEnvVariable = "KnownIssue-2: Jobs with run steps that use token in environment variable are not supported"
-const errorLocalAction = "KnownIssue-3: Action %s is a local action. Local actions are not supported"
-const errorMissingAction = "KnownIssue-4: Action %s is not in the knowledge base"
-const errorAlreadyHasPermissions = "KnownIssue-5: Permissions were not added to the job since it already had permissions defined"
-const errorDockerAction = "KnownIssue-6: Action %s is a docker action which uses Github token. Docker actions that uses token are not supported"
-const errorIncorrectYaml = "Unable to parse the YAML workflow file"
+const (
+	errorSecretInRunStep            = "KnownIssue-1: Jobs with run steps that use token are not supported"
+	errorSecretInRunStepEnvVariable = "KnownIssue-2: Jobs with run steps that use token in environment variable are not supported"
+	errorLocalAction                = "KnownIssue-3: Action %s is a local action. Local actions are not supported"
+	errorMissingAction              = "KnownIssue-4: Action %s is not in the knowledge base"
+	errorAlreadyHasPermissions      = "KnownIssue-5: Permissions were not added to the job since it already had permissions defined"
+	errorDockerAction               = "KnownIssue-6: Action %s is a docker action which uses Github token. Docker actions that uses token are not supported"
+	errorIncorrectYaml              = "Unable to parse the YAML workflow file"
+)
 
-//To avoid a typo while adding the permissions
+// To avoid a typo while adding the permissions
 const (
 	actions_read              = "actions: read"
 	actions_write             = "actions: write"
@@ -129,10 +131,9 @@ func AddWorkflowLevelPermissions(inputYaml string) (string, error) {
 }
 
 func AddJobLevelPermissions(inputYaml string) (*SecureWorkflowReponse, error) {
-
 	workflow := Workflow{}
 	errors := make(map[string][]string)
-	//fixes := make(map[string]string)
+	// fixes := make(map[string]string)
 	fixWorkflowPermsReponse := &SecureWorkflowReponse{}
 
 	err := yaml.Unmarshal([]byte(inputYaml), &workflow)
@@ -224,21 +225,21 @@ func (jobState *JobState) getPermissionsForAction(action Step) ([]string, error)
 	permissions := []string{}
 	atIndex := strings.Index(action.Uses, "@")
 
-	//Do not check for permissions in KB, if it is a docker action
+	// Do not check for permissions in KB, if it is a docker action
 	if strings.HasPrefix(action.Uses, "docker://") {
-		//Return error if it uses token in environment variable
+		// Return error if it uses token in environment variable
 		for _, envValue := range action.Env {
 			if isGitHubToken(envValue) {
 				return nil, fmt.Errorf(errorDockerAction, action.Uses)
 			}
 		}
-		//Return error if it uses token in action input
+		// Return error if it uses token in action input
 		for _, actionValue := range action.With {
 			if isGitHubToken(actionValue) {
 				return nil, fmt.Errorf(errorDockerAction, action.Uses)
 			}
 		}
-		//else return without raising error
+		// else return without raising error
 		return permissions, nil
 	}
 
@@ -249,7 +250,6 @@ func (jobState *JobState) getPermissionsForAction(action Step) ([]string, error)
 	actionKey := action.Uses[0:atIndex]
 
 	actionMetadata, err := GetActionKnowledgeBase(actionKey)
-
 	if err != nil {
 		jobState.MissingActions = append(jobState.MissingActions, action.Uses)
 		return nil, fmt.Errorf(errorMissingAction, action.Uses)
@@ -352,8 +352,8 @@ func (jobState *JobState) getPermissionsForRunStep(step Step) ([]Permission, err
 
 	runStep := evaluateEnvironmentVariables(step)
 
-	//Note: Add permissions in this format
-	//permissions = append(permissions, Permission{permission: "", action: "", reason: ""})
+	// Note: Add permissions in this format
+	// permissions = append(permissions, Permission{permission: "", action: "", reason: ""})
 
 	// reviewdog
 	if step.Env["REVIEWDOG_GITHUB_API_TOKEN"] != "" && isGitHubToken(step.Env["REVIEWDOG_GITHUB_API_TOKEN"]) {
@@ -416,7 +416,6 @@ func (jobState *JobState) getPermissionsForRunStep(step Step) ([]Permission, err
 
 	// Java. See action-setup-java.yml
 	if strings.Contains(runStep, "gradle publish") || strings.Contains(runStep, "mvn deploy") {
-
 		// if any of the environment variables have the github token
 		for _, value := range step.Env {
 			if strings.Contains(value, "secrets.GITHUB_TOKEN") || strings.Contains(value, "github.token") {
@@ -457,11 +456,9 @@ func (jobState *JobState) getPermissionsForRunStep(step Step) ([]Permission, err
 	}
 
 	for _, envValue := range step.Env {
-
 		if strings.Contains(envValue, "secrets.GITHUB_TOKEN") || strings.Contains(envValue, "github.token") {
 			return nil, fmt.Errorf(errorSecretInRunStepEnvVariable)
 		}
-
 	}
 
 	return permissions, nil
@@ -471,10 +468,8 @@ func (jobState *JobState) getPermissions(steps []Step) ([]string, error) {
 	permissions := []string{}
 
 	for _, step := range steps {
-
 		if step.Uses != "" { // it is an action
 			permsForAction, err := jobState.getPermissionsForAction(step)
-
 			if err != nil {
 				jobState.Errors = append(jobState.Errors, err)
 			}
@@ -493,7 +488,6 @@ func (jobState *JobState) getPermissions(steps []Step) ([]string, error) {
 
 			permissions = append(permissions, permsForRunStep...)
 		}
-
 	}
 
 	if len(jobState.Errors) > 0 {
@@ -510,7 +504,6 @@ func (jobState *JobState) getPermissions(steps []Step) ([]string, error) {
 }
 
 func removeRedundantPermisions(permissions []string) []string {
-
 	permissions = removeDuplicates(permissions)
 	/*
 	 permissions would be like
