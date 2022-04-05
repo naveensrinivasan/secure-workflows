@@ -1,4 +1,4 @@
-module github.com/step-security/secure-workflows
+module github.com/naveensrinivasan/secure-workflows
 
 go 1.17
 
